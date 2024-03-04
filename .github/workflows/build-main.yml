@@ -1,0 +1,54 @@
+name: build-main
+run-name: build-main
+on: 
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set variables
+        run: |
+          VER=$(cat VERSION)
+          REV=$(cat REVISION)
+          echo "VERSION=$VER" >> $GITHUB_ENV
+          echo "REVISION=$REV" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/dataaxiom/flutter-web
+          labels: |
+            org.opencontainers.image.vendor=Dataaxiom, Inc
+          tags: |
+            main
+      
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Delete images
+        uses: bots-house/ghcr-delete-image-action@v1.1.0
+        with:
+          owner: dataaxiom 
+          name: flutter-web
+          token: ${{ secrets.GITHUB_TOKEN }}
+          untagged-keep-latest: 1
