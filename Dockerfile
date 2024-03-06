@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ARG VERSION=3.19.2
+ARG VERSION
 
 ENV DEBIAN_FRONTEND=noninteractive
 
